@@ -1,173 +1,103 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
 
 export default function Home() {
-  const raceDate = new Date("2026-05-31");
-  const totalMilesGoal = 120;
+  const [miles, setMiles] = useState(0);
+  const [pace, setPace] = useState("9:00");
+  const [inputMiles, setInputMiles] = useState("");
 
-  const [goalTime, setGoalTime] = useState<number>(105); // minutes
-  const [milesLogged, setMilesLogged] = useState<number>(0);
-  const [newMiles, setNewMiles] = useState<string>("");
-  const [newPace, setNewPace] = useState<string>("");
-  const [history, setHistory] = useState<any[]>([]);
+  const raceGoal = 13.1;
+  const progress = (miles / raceGoal) * 100;
 
   useEffect(() => {
-    const saved = localStorage.getItem("halfMarathonPro");
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      setMilesLogged(parsed.milesLogged);
-      setHistory(parsed.history);
-      setGoalTime(parsed.goalTime);
-    }
+    const savedMiles = localStorage.getItem("miles");
+    if (savedMiles) setMiles(parseFloat(savedMiles));
   }, []);
 
   useEffect(() => {
-    localStorage.setItem(
-      "halfMarathonPro",
-      JSON.stringify({ milesLogged, history, goalTime })
-    );
-  }, [milesLogged, history, goalTime]);
+    localStorage.setItem("miles", miles.toString());
+  }, [miles]);
 
   const addRun = () => {
-    const miles = parseFloat(newMiles);
-    const pace = parseFloat(newPace);
-
-    if (!isNaN(miles) && miles > 0) {
-      setMilesLogged((prev) => prev + miles);
-      setHistory((prev) => [
-        ...prev,
-        { run: prev.length + 1, miles, pace },
-      ]);
-      setNewMiles("");
-      setNewPace("");
-    }
-  };
-
-  const daysToRace = Math.max(
-    0,
-    Math.ceil((raceDate.getTime() - new Date().getTime()) / 86400000)
-  );
-
-  const averagePace =
-    history.length > 0
-      ? (
-          history.reduce((acc, run) => acc + (run.pace || 0), 0) /
-          history.length
-        ).toFixed(2)
-      : "0";
-
-  const predictedFinish =
-    averagePace !== "0"
-      ? (parseFloat(averagePace) * 13.1).toFixed(1)
-      : "0";
-
-  const goalPace = (goalTime / 13.1).toFixed(2);
-
-  const progressPercent = Math.min(
-    (milesLogged / totalMilesGoal) * 100,
-    100
-  );
-
-  const coachingInsight = () => {
-    if (averagePace === "0")
-      return "Log runs to unlock AI coaching insights.";
-    if (parseFloat(averagePace) < parseFloat(goalPace))
-      return "🔥 You're ahead of goal pace. Keep pushing.";
-    return "Focus on tempo consistency to close the gap.";
+    if (!inputMiles) return;
+    setMiles(miles + parseFloat(inputMiles));
+    setInputMiles("");
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6 flex flex-col items-center">
-      <motion.h1
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-3xl font-bold mb-6"
-      >
-        Elite Half Marathon Dashboard
-      </motion.h1>
+    <main className="min-h-screen px-6 py-10 bg-black">
+      <div className="max-w-xl mx-auto space-y-10">
 
-      {/* Countdown */}
-      <div className="bg-white shadow-xl rounded-2xl p-6 w-full max-w-xl mb-6">
-        <h2 className="text-xl font-semibold mb-2">Race Countdown</h2>
-        <p>{daysToRace} days remaining</p>
-      </div>
+        {/* Header */}
+        <div className="text-center space-y-2">
+          <h1 className="text-3xl font-bold tracking-wide">
+            HALF MARATHON
+          </h1>
+          <p className="text-gray-400 text-sm">
+            Train like an athlete.
+          </p>
+        </div>
 
-      {/* Goal Adjustment */}
-      <div className="bg-white shadow-xl rounded-2xl p-6 w-full max-w-xl mb-6">
-        <h2 className="text-xl font-semibold mb-2">Goal Time (minutes)</h2>
-        <input
-          type="number"
-          value={goalTime}
-          onChange={(e) => setGoalTime(parseFloat(e.target.value))}
-          className="border p-2 rounded w-full"
-        />
-        <p className="text-sm mt-2">Goal Pace: {goalPace} min/mile</p>
-      </div>
+        {/* Big Pace Display */}
+        <div className="text-center">
+          <p className="text-gray-400 text-sm">Current Average Pace</p>
+          <h2 className="text-6xl font-extrabold mt-2">{pace}</h2>
+          <p className="text-gray-400">min / mile</p>
+        </div>
 
-      {/* Log Run */}
-      <div className="bg-white shadow-xl rounded-2xl p-6 w-full max-w-xl mb-6">
-        <h2 className="text-xl font-semibold mb-4">Log Run</h2>
-        <div className="flex gap-2 mb-4">
+        {/* Progress Bar */}
+        <div className="space-y-2">
+          <p className="text-sm text-gray-400">
+            Progress to 13.1 miles
+          </p>
+          <div className="w-full bg-gray-800 h-4 rounded-full">
+            <div
+              className="bg-green-500 h-4 rounded-full transition-all duration-500"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <p className="text-right text-sm text-gray-400">
+            {miles.toFixed(1)} / {raceGoal} miles
+          </p>
+        </div>
+
+        {/* Add Run */}
+        <div className="space-y-4">
           <input
             type="number"
-            placeholder="Miles"
-            value={newMiles}
-            onChange={(e) => setNewMiles(e.target.value)}
-            className="border p-2 rounded w-1/2"
+            placeholder="Miles ran today"
+            value={inputMiles}
+            onChange={(e) => setInputMiles(e.target.value)}
+            className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-green-500"
           />
-          <input
-            type="number"
-            placeholder="Avg Pace (min/mile)"
-            value={newPace}
-            onChange={(e) => setNewPace(e.target.value)}
-            className="border p-2 rounded w-1/2"
-          />
-        </div>
-        <button
-          onClick={addRun}
-          className="bg-black text-white px-4 py-2 rounded-xl"
-        >
-          Add Run
-        </button>
-      </div>
 
-      {/* Performance */}
-      <div className="bg-white shadow-xl rounded-2xl p-6 w-full max-w-xl mb-6">
-        <h2 className="text-xl font-semibold mb-2">Performance Metrics</h2>
-        <p>Total Miles: {milesLogged}</p>
-        <p>Average Pace: {averagePace} min/mile</p>
-        <p>Predicted Finish: {predictedFinish} minutes</p>
-        <p className="mt-3 text-sm">{coachingInsight()}</p>
-        <div className="w-full bg-gray-200 rounded-full h-3 mt-4">
-          <div
-            className="bg-green-500 h-3 rounded-full"
-            style={{ width: `${progressPercent}%` }}
-          />
+          <button
+            onClick={addRun}
+            className="w-full bg-green-500 text-black font-bold py-3 rounded-xl hover:bg-green-400 transition"
+          >
+            LOG RUN
+          </button>
         </div>
-      </div>
 
-      {/* Chart */}
-      <div className="bg-white shadow-xl rounded-2xl p-6 w-full max-w-xl">
-        <h2 className="text-xl font-semibold mb-4">Mileage Trend</h2>
-        <ResponsiveContainer width="100%" height={250}>
-          <LineChart data={history}>
-            <XAxis dataKey="run" />
-            <YAxis />
-            <Tooltip />
-            <Line type="monotone" dataKey="miles" strokeWidth={3} />
-          </LineChart>
-        </ResponsiveContainer>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-gray-900 p-4 rounded-xl">
+            <p className="text-gray-400 text-sm">Total Miles</p>
+            <p className="text-2xl font-bold mt-1">
+              {miles.toFixed(1)}
+            </p>
+          </div>
+
+          <div className="bg-gray-900 p-4 rounded-xl">
+            <p className="text-gray-400 text-sm">Goal Distance</p>
+            <p className="text-2xl font-bold mt-1">
+              13.1
+            </p>
+          </div>
+        </div>
+
       </div>
-    </div>
+    </main>
   );
 }
